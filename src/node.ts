@@ -1,19 +1,25 @@
 type Id = string | number;
 class Node {
   _ref: any;
+  constructor() {
+    this._ref = {};
+  }
   fromObject(object: any) {
-    this._ref = object;
     for (const [key, value] of Object.entries(object)) {
       this[key] = value;
     }
+    this.generateRef();
   }
   generateRef() {
-    this._ref = {};
     for (const [key, value] of Object.entries(this)) {
-      if (key === "_ref") continue;
-      if (typeof value === "function") continue;
+      if(key === '_ref') continue;
+      if (value instanceof NodeList) {
+        this._ref[key] = value._ref;
+        continue;
+      };
       this._ref[key] = value;
     }
+    return this._ref;
   }
   [key: Id]: NodeList | Id | any;
 }
@@ -30,8 +36,7 @@ class NodeList {
   append(id: Id, node: Node): Node {
     if (this.exists(id)) return;
     this.list.set(id, node);
-    node.generateRef();
-    this._ref.push(node._ref);
+    this._ref.push(node.generateRef());
     return node;
   }
 
@@ -42,6 +47,7 @@ class NodeList {
   find(id: Id): Node {
     return this.list.get(id);
   }
+
 }
 
 const transform = (items: Array<any>, model: any) => {
@@ -88,12 +94,18 @@ const orders = [
   {
     orderId: 1,
     orderName: "Order 1",
-    productId: 1,
-    productName: "Product 1",
+    productId: 3,
+    productName: "Product 3",
   },
   {
     orderId: 1,
     orderName: "Order 1",
+    productId: 2,
+    productName: "Product 2",
+  },
+  {
+    orderId: 2,
+    orderName: "Order 2",
     productId: 2,
     productName: "Product 2",
   },
@@ -109,4 +121,4 @@ const model = (order, key) => ({
 });
 
 const result = transform(orders, model);
-console.log(result);
+console.log(result._ref[0]);
