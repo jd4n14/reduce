@@ -8,23 +8,21 @@ const transform = (items, model) => {
     return { keyFn, getLastKey: () => keyList[0] };
   };
 
-  const createNestedMap = (item, model, map) => {
-    const tmpItem = {};
-    // iterate over the keys of the model using Object.entries
+  const createNestedMap = (item, model) => {
+    const output = {};
     for (const [property, value] of Object.entries(model)) {
-      // if the value of the model is an object, call createNestedMap
       if (typeof value === "function") {
         const { keyFn, getLastKey: getCurrentKey } = generateKeyFn();
         const propertyMap = new Map();
         const model = value(item, keyFn);
         const nestedObj = createNestedMap(item, model, propertyMap);
         propertyMap.set(getCurrentKey(), nestedObj);
-        tmpItem[property] = propertyMap;
+        output[property] = propertyMap;
       } else {
-        tmpItem[property] = value;
+        output[property] = value;
       }
     }
-    return tmpItem;
+    return output;
   };
   const globalItemsMap = new Map();
   const recursiveMerge = (map, model) => {

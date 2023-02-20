@@ -1,123 +1,112 @@
-import uuid from "uuid";
-
-/*
-Example:
-{
-    "id": "1",
-    "identifier": "1",
-    "products": [
-        {
-            "id": "1",
-            "name": "product 1",
-            "price": 100
-        
-    ]
-}
-{
-    "name": "1",
-    "parent": null,
-    "children": [
-        {
-            "name": "identifier",
-            "parent": null,
-            "children": [],
-            "ref": "1"
-        },
-        {
-            "name": "products",
-            "parent": null,
-            "ref": [],
-            "children": [
-                {
-                    "name": "name",
-                    "ref": "product 1",
-                    "parent": null,
-                    "children": []
-                },
-                {
-                    "name": "price",
-                    "ref": 100,
-                    "parent": null,
-                    "children": []
-                }
-            ]
-        }
-    ],
-    "ref": [],
-}
-*/
-
-type ObjectType<T extends Record<string, any>> = T;
-
-class Leaf {
-  name: string | number;
-  parent: Leaf | Node | null;
-  value: Array<Node | Leaf>;
-}
-
+type Id = string | number;
 class Node {
-  id: string | number | null;
-  parent: Node | Leaf | null;
-  children: Array<Leaf | Node>;
-  ref: any;
-
-  createFromLeaf(leaf: Leaf) {
-    this.id = leaf.name;
-    this.parent = leaf.parent;
-    this.children = [leaf];
-    this.ref = leaf.value;
+  _ref: any;
+  fromObject(object: any) {
+    this._ref = object;
+    for (const [key, value] of Object.entries(object)) {
+      this[key] = value;
+    }
   }
+  generateRef() {
+    this._ref = {};
+    for (const [key, value] of Object.entries(this)) {
+      if (key === "_ref") continue;
+      if (typeof value === "function") continue;
+      this._ref[key] = value;
+    }
+  }
+  [key: Id]: NodeList | Id | any;
 }
 
-class Tree<T> {
-  children: Map<string | number, Node | Leaf>;
-  // private function that generate unique id ussing uuid v4 and remove the dashes
-  private generateId() {
-    return uuid.v4().replace(/-/g, "");
-  }
+class NodeList {
+  list: Map<Id, Node>;
+  _ref: any;
+
   constructor() {
-    this.children = new Map();
+    this.list = new Map();
+    this._ref = [];
   }
-  addNode(node: Node | Leaf) {
-    if (node instanceof Leaf) {
-      const newNode = new Node();
-      newNode.createFromLeaf(node);
-      const id = this.generateId();
-      this.children.set(id, newNode);
-      return newNode;
-    }
-    this.children.set(node.id, node);
+
+  append(id: Id, node: Node): Node {
+    if (this.exists(id)) return;
+    this.list.set(id, node);
+    node.generateRef();
+    this._ref.push(node._ref);
+    return node;
   }
-  findRootNodeById(id: string | number) {
-    return this.children.get(id);
+
+  exists(id: Id): boolean {
+    return this.list.has(id);
   }
-  // recursive function that parse the object and return a tree
-  parse<T>(
-    id: string | number,
-    item: Array<ObjectType<T>> | ObjectType<T> | string | number | undefined,
-    ref: any
-  ): Node | Leaf {
-    if (Array.isArray(item)) {
-      item.forEach((item) => {
-        const key = item?.getKey() || this.generateId();
-        const node = new Node();
-        node.id = key;
-        const children = Object.keys(item).map((key) => {
-          const value = item[key];
-          return this.parse(key, value, item[key]);
-        });
-        node.children = children;
-        return node;
-      });
-    } else if (item instanceof Object) {
-      for (const [key, value] of Object.entries(item)) {
-        return this.parse(key, value, key[value]);
-      }
-    } else {
-      const leaf = new Leaf();
-      leaf.name = id;
-      leaf.value = ref;
-      return this.addNode(leaf);
-    }
+
+  find(id: Id): Node {
+    return this.list.get(id);
   }
 }
+
+const transform = (items: Array<any>, model: any) => {
+  const nodeList = new NodeList();
+  const generateKeyFn = () => {
+    const keyList: Array<Id> = [];
+    const keyFn = (key: Id) => {
+      keyList.push(key);
+      return key;
+    };
+    return { keyFn, getKey: () => keyList[0] };
+  };
+  const iterateModel = (item: any, model: any, ref: any) => {
+    const node = new Node();
+    for (const [property, value] of Object.entries(model)) {
+      if (typeof value === "function") {
+        const { keyFn, getKey } = generateKeyFn();
+        const model = value(item, keyFn);
+
+        const newNode = iterateModel(item, model, ref[property]);
+        const nodeList = ref[property] || new NodeList();
+        nodeList.append(getKey(), newNode);
+
+        node[property] = nodeList;
+      } else {
+        node[property] = value;
+      }
+    }
+    return node;
+  };
+  // iterate over items
+  for (const item of items) {
+    const { keyFn, getKey } = generateKeyFn();
+    const modelFn = model(item, keyFn);
+    const node = nodeList.find(getKey()) || new Node();
+    const output = iterateModel(item, modelFn, node);
+    node.fromObject(output);
+    nodeList.append(getKey(), node);
+  }
+  return nodeList;
+};
+
+const orders = [
+  {
+    orderId: 1,
+    orderName: "Order 1",
+    productId: 1,
+    productName: "Product 1",
+  },
+  {
+    orderId: 1,
+    orderName: "Order 1",
+    productId: 2,
+    productName: "Product 2",
+  },
+];
+
+const model = (order, key) => ({
+  id: key(order.orderId),
+  name: order.orderName,
+  products: (product, key) => ({
+    id: key(product.productId),
+    name: product.productName,
+  }),
+});
+
+const result = transform(orders, model);
+console.log(result);
