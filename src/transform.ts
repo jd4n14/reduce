@@ -1,11 +1,17 @@
-import type { Id, KeyFn, TransformOptions, ReturnType } from "./types";
+import type {
+  Id,
+  KeyFn,
+  TransformOptions,
+  ReturnType,
+  ModelType,
+} from "./types";
 import { Node } from "./node";
 import { NodeList } from "./node-list";
 
 export const transform = <
   T extends Record<string, any>,
   B extends TransformOptions,
-  K
+  K extends ModelType<T>
 >(
   items: Array<T>,
   model: (item: T, key: KeyFn) => K,
@@ -20,7 +26,7 @@ export const transform = <
     };
     return { keyFn, getKey: () => keyList[0] };
   };
-  const iterateModel = (item: T, model: K, ref: any) => {
+  const iterateModel = (item: T, model: ModelType<T>, ref: any) => {
     const node = new Node<K>();
     for (const [property, value] of Object.entries(model)) {
       if (typeof value === "function") {
@@ -47,9 +53,9 @@ export const transform = <
     const modelFn = model(item, keyFn);
     const node = nodeList.find(getKey()) || new Node();
     const output = iterateModel(item, modelFn, node);
-    node.fromObject(output as K);
+    node.fromObject(output as any);
     nodeList.append(getKey(), node);
   }
-  if (options.raw) return nodeList as ReturnType<B, K>;
-  else return nodeList._ref as ReturnType<B, K>;
+  if (options.raw) return nodeList as unknown as ReturnType<B, K>;
+  else return nodeList._ref as unknown as ReturnType<B, K>;
 };

@@ -28,7 +28,22 @@ type TransformOptions = {
 };
 
 type ReturnType<C extends TransformOptions, K> = C["raw"] extends true
-  ? NodeListTypeRaw<K>
+  ? NodeList<NodeListTypeRaw<K>>
   : NodeListType<K>;
 
-export type { Id, KeyFn, NodeListType, TransformOptions, NodeListTypeRaw, ReturnType };
+type ModelProperty<T> =
+  | Id
+  | ((item: T, key: KeyFn) => ModelType<T>)
+  | string
+  | number;
+
+type ModelType<T> = Record<string, ModelProperty<T>>;
+export type {
+  Id,
+  KeyFn,
+  NodeListType,
+  TransformOptions,
+  NodeListTypeRaw,
+  ReturnType,
+  ModelType,
+};

@@ -33,14 +33,9 @@ const orders = [
 
 const result = transform(orders, (order, key) => ({
   id: key(order.orderId),
-  name: order.orderName,
-  products: (product: typeof order, key: KeyFn) => ({
+  products: (product, key) => ({
     id: key(product.productId),
     name: product.productName,
-    categories: (category: typeof product, key: KeyFn) => ({
-      id: key(category.categoryId),
-      name: category.categoryName,
-    }),
   }),
 }));
 
