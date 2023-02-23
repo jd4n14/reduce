@@ -1,6 +1,9 @@
 import { NodeList } from "./node-list";
 type Id = string | number;
-type KeyFn = (key: Id) => Id;
+type KeyFnOptions = {
+    skipUndefined?: boolean;
+}
+type KeyFn = (key: Id, options?: KeyFnOptions) => Id | undefined;
 
 type NodeListType<T> = T extends (...params: any[]) => infer R
   ? NodeListType<R>
@@ -36,10 +39,12 @@ type ModelProperty<T> =
   | string
   | number;
 
+
 type ModelType<T> = Record<string, ModelProperty<T>>;
 export type {
   Id,
   KeyFn,
+  KeyFnOptions,
   NodeListType,
   TransformOptions,
   NodeListTypeRaw,

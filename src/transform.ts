@@ -4,9 +4,14 @@ import type {
   TransformOptions,
   ReturnType,
   ModelType,
+  KeyFnOptions,
 } from "./types";
 import { Node } from "./node";
 import { NodeList } from "./node-list";
+
+const isUndefined = (value: any) => {
+    return value === undefined || value === null;
+}
 
 export const transform = <
   T extends Record<string, any>,
@@ -20,20 +25,26 @@ export const transform = <
   const nodeList = new NodeList<K>();
   const generateKeyFn = () => {
     const keyList: Array<Id> = [];
-    const keyFn = (key: Id) => {
+    const options: KeyFnOptions = {}
+    const keyFn: KeyFn = (key: Id, _options) => {
+      Object.assign(options, _options)
       keyList.push(key);
       return key;
     };
-    return { keyFn, getKey: () => keyList[0] };
+    return { keyFn, getKey: () => keyList[0], options };
   };
   const iterateModel = (item: T, model: ModelType<T>, ref: any) => {
     const node = new Node<K>();
     for (const [property, value] of Object.entries(model)) {
       if (typeof value === "function") {
-        const { keyFn, getKey } = generateKeyFn();
+        const { keyFn, getKey, options } = generateKeyFn();
         const model = value(item, keyFn);
-
         const nodeList = ref[property] || new NodeList();
+
+        if(options?.skipUndefined && isUndefined(getKey())) {
+          node[property] = nodeList;
+          continue;
+        }
         const newNode = iterateModel(
           item,
           model,
@@ -49,8 +60,9 @@ export const transform = <
     return node;
   };
   for (const item of items) {
-    const { keyFn, getKey } = generateKeyFn();
+    const { keyFn, getKey, options } = generateKeyFn();
     const modelFn = model(item, keyFn);
+    if(options?.skipUndefined && isUndefined(getKey())) continue;
     const node = nodeList.find(getKey()) || new Node();
     const output = iterateModel(item, modelFn, node);
     node.fromObject(output as any);

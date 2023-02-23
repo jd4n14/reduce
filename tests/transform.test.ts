@@ -92,6 +92,91 @@ describe('Transform function', function () {
         expect(result).toHaveLength(2)
     });
 
+    test('Should skip items with undefined key and skipUndefined option true', () => {
+        const data = [
+            {
+                orderId: 1,
+                orderName: 'test',
+                productId: 1,
+                productName: 'test',
+            },
+            {
+                orderId: 1,
+                orderName: 'test',
+                productId: null,
+                productName: 'test',
+            }
+        ]
+        const model = (order: typeof data[number], key: KeyFn) => ({
+            id: key(order.orderId),
+            name: order.orderName,
+            products: (product: typeof data[number], key: KeyFn) => ({
+                id: key(order.productId, { skipUndefined: true }),
+                name: product.productName
+            }),
+        });
+        const result: any = transform(data, model);
+        expect(result).toHaveLength(1);
+
+        expect(result[0].products).toHaveLength(1);
+        expect(result).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: expect.anything(),
+                    name: expect.anything(),
+                    products: expect.arrayContaining([
+                        expect.objectContaining({
+                            id: expect.anything(),
+                            name: expect.anything()
+                        }),
+                    ]),
+                })
+            ])
+        )
+    });
+    test('Should skip items with undefined key', () => {
+        const data = [
+            {
+                orderId: null,
+                orderName: 'test',
+                productId: 1,
+                productName: 'productName',
+            },
+            {
+                orderId: 0,
+                orderName: 'test',
+                productId: 1,
+                productName: 'name',
+            }
+        ]
+        const model = (order: typeof data[number], key: KeyFn) => ({
+            id: key(order.orderId, { skipUndefined: true }),
+            name: order.orderName,
+            products: (product: typeof data[number], key: KeyFn) => ({
+                id: key(order.productId, { skipUndefined: true }),
+                name: product.productName
+            }),
+        });
+        const result: any = transform(data, model);
+        expect(result).toHaveLength(1);
+        console.log(JSON.stringify(result))
+        expect(result[0].products).toHaveLength(1);
+        expect(result).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    id: expect.anything(),
+                    name: expect.anything(),
+                    products: expect.arrayContaining([
+                        expect.objectContaining({
+                            id: expect.anything(),
+                            name: expect.anything()
+                        }),
+                    ]),
+                })
+            ])
+        )
+    });
+
     test('should group array of items',  () => {
         const orders = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 1 }];
         type OrderType = typeof orders[number];
