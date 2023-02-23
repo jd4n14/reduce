@@ -1,4 +1,3 @@
-import type { Node } from "./node";
 import { NodeList } from "./node-list";
 type Id = string | number;
 type KeyFn = (key: Id) => Id;
