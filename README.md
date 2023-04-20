@@ -1,7 +1,6 @@
 # Reducex
 
-This is a TypeScript library that provides a utility function for grouping and reducing arrays with nested objects. It's
-useful for applications that require complex data manipulation, such as data analysis, reporting, or visualization.
+`reducex` is a lightweight JavaScript library that helps you transform and reduce flat arrays into complex structures while grouping and keeping unique values. With a simple and flexible API, you can easily define the structure of your desired output and reduce any flat array into nested objects or arrays.
 
 ## Installation
 To use this library, you need to install it in your project. You can do this using npm:
