@@ -1,11 +1,3 @@
-/**
- * Algoritmo para transformar un array de objetos en un array de objetos
- * con la posibilidad de agrupar los objetos hijos en un array.
- * Paso 1: Recorrer el array de objetos y crear un objeto con la estructura nueva.
- * Paso 2: Recorrer el objeto creado y buscar las propiedades que son funciones.
- * Paso 3: Si la propiedad es una función, ejecutarla y guardar el resultado en un Map.
- */
-
 type KeyFn = (key: string | number) => string | number;
 
 function transform<
