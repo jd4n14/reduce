@@ -43,9 +43,9 @@ describe('Transform function', function () {
         const model = (order: typeof orders[number], key: (param: any) => any) => ({
             id: key(order.orderId),
             name: order.orderName,
-            products: () => ({
-                id: key(order.productId),
-                name: order.productName
+            products: (product, key) => ({
+                id: key(product.productId),
+                name: product.productName
             })
         });
         const result = transform(orders, model);
@@ -111,7 +111,7 @@ describe('Transform function', function () {
             id: key(order.orderId),
             name: order.orderName,
             products: (product: typeof data[number], key: KeyFn) => ({
-                id: key(order.productId, { skipUndefined: true }),
+                id: key(product.productId, { skipUndefined: true }),
                 name: product.productName
             }),
         });
@@ -153,7 +153,7 @@ describe('Transform function', function () {
             id: key(order.orderId, { skipUndefined: true }),
             name: order.orderName,
             products: (product: typeof data[number], key: KeyFn) => ({
-                id: key(order.productId, { skipUndefined: true }),
+                id: key(product.productId, { skipUndefined: true }),
                 name: product.productName
             }),
         });
